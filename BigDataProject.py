@@ -12,6 +12,7 @@ from datetime import date, timedelta
 from konlpy.tag import Okt
 import time
 import sys
+import os
 
 font_location = "C:/Windows/Fonts/malgun.ttf"
 font_name = font_manager.FontProperties(fname=font_location).get_name()
@@ -19,10 +20,16 @@ matplotlib.rc('font', family=font_name)
 matplotlib.rcParams['axes.unicode_minus'] = False
 matplotlib.rcParams['figure.figsize'] = (12, 6)
 
+try:
+    os.chdir(sys._MEIPASS)
+    print(sys._MEIPASS)
+except:
+    os.chdir(os.getcwd())
+
 okt = Okt()
 stopwords = []
 
-with open('stopword.txt', 'r', encoding="UTF8") as file:
+with open('.\\stopword.txt', 'r', encoding="UTF8") as file:
     stopwords = file.readlines()
     for index, word in enumerate(stopwords):
         stopwords[index] = word.replace('\n', '')
