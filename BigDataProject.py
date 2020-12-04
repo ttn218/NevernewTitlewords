@@ -44,6 +44,7 @@ def multiwordreplaceEmpty(strData):
 
 def StringSplit(strData):
     words = okt.nouns(strData)
+    # words = strData.split(' ')
     result = []
     for word in words:
         temp = multireplaceEmpty(
