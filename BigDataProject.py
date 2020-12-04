@@ -9,6 +9,7 @@ from collections import Counter
 import matplotlib
 from matplotlib import font_manager
 from datetime import date, timedelta
+from konlpy.tag import Okt
 import time
 import sys
 
@@ -18,6 +19,15 @@ matplotlib.rc('font', family=font_name)
 matplotlib.rcParams['axes.unicode_minus'] = False
 matplotlib.rcParams['figure.figsize'] = (12, 6)
 
+okt = Okt()
+stopwords = []
+
+with open('stopword.txt', 'r', encoding="UTF8") as file:
+    stopwords = file.readlines()
+    for index, word in enumerate(stopwords):
+        stopwords[index] = word.replace('\n', '')
+    print("stopword 읽기끝")
+
 
 def multireplaceEmpty(strData, replacewords):
     for word in list(replacewords):
@@ -25,22 +35,21 @@ def multireplaceEmpty(strData, replacewords):
     return strData
 
 
-def multiwordreplaceEmpty(strData, replacewords):
-    for word in replacewords.split(','):
+def multiwordreplaceEmpty(strData):
+    for word in stopwords:
         if(word == strData):
             strData = strData.replace(word, '')
     return strData
 
 
 def StringSplit(strData):
-    words = strData.split(" ")
+    words = okt.nouns(strData)
     result = []
     for word in words:
         temp = multireplaceEmpty(
             word, '\',\".·/<>}{][;:?!\r\n\t“‘’”…#-`()\u2028®')
         temp = multiwordreplaceEmpty(
-            temp, "개발,출시,등,지원,진행,선정,발표,공개,시장,위한,기술,기업,내년,국내,완료,시행,확대,자,이슈,대가,제공,첫,돌파,개최,실시,확정,추가,윙,대표,것,매출,1분기,2분기,3분기,4분기,신규,2020,시대,기반,새,및"+
-            "최대")
+            temp)
         if(temp != ''):
             result.append(temp)
 
