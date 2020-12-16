@@ -10,6 +10,7 @@ import matplotlib
 from matplotlib import font_manager
 from datetime import date, timedelta
 from konlpy.tag import Okt
+from multiprocessing import Pool, Manager
 import time
 import sys
 import os
@@ -97,11 +98,11 @@ sids = [731, 226, 227, 230, 732, 283, 229, 228]
 group = {731: '모바일', 226: '인터넷SNS', 227: '통신뉴미디어', 230: 'IT일반',
          732: '보안해킹', 283: '컴퓨터', 229: '게임리뷰', 228: '과학일반'}
 today = date.today()
-startTime = time.time()
 
-dic = {}
 
-for sid in sids:
+def News_title_dict(*args):
+    dic = args[0][0]
+    sid = args[0][1]
     sei = []
     for i in range(days):
         DateData = (today - timedelta(days=i)).isoformat().replace('-', '')
@@ -116,26 +117,41 @@ for sid in sids:
             for title in list_title:
                 sei.extend(StringSplit(title.get_text()))
     dic[sid] = sei
-print(
-    f"-------------------------{round(time.time() - startTime,2)}초-------------------------")
 
 
-DFdatas = {}
-for key, value in dic.items():
-    DFdatas[key] = pd.DataFrame(pd.Series(Counter(value)), columns=['count'])
+if __name__ == '__main__':
+    manager = Manager()
+    dic = manager.dict()
+    diclist = []
+    for sid in sids:
+        diclist.append((dic, sid))
 
-excel_writer = pd.ExcelWriter(u'네이버뉴스_IT_과학_제목_단어수.xlsx', engine='xlsxwriter')
-i = 0
-for key, value in DFdatas.items():
-    DFdata = value.sort_values(['count'], ascending=False)
-    DFdata.to_excel(excel_writer, index=True, sheet_name=f'분류 {group[key]}')
-    topDFdata = DFdata.head(30)
-    topDFdata.to_excel(excel_writer, index=True,
-                       sheet_name=f'분류 {group[key]} 상위30개 단어들')
-    topDFdata.sort_values(['count']).plot(kind='barh')
-    plt.title(f'{group[key]}뉴스 최근 {days}일간 가장 많이 나온 단어 상위 30개')
-    i = i+1
+    # print(str(diclist))
 
+    startTime = time.time()
+    pool = Pool(processes=4)
+    pool.map(News_title_dict, iterable=diclist)
+    print(
+        f"-------------------------{round(time.time() - startTime,2)}초-------------------------")
 
-excel_writer.save()
-plt.show()
+    DFdatas = {}
+    for key, value in dic.items():
+        DFdatas[key] = pd.DataFrame(
+            pd.Series(Counter(value)), columns=['count'])
+
+    excel_writer = pd.ExcelWriter(
+        u'네이버뉴스_IT_과학_제목_단어수.xlsx', engine='xlsxwriter')
+    i = 0
+    for key, value in DFdatas.items():
+        DFdata = value.sort_values(['count'], ascending=False)
+        DFdata.to_excel(excel_writer, index=True,
+                        sheet_name=f'분류 {group[key]}')
+        topDFdata = DFdata.head(30)
+        topDFdata.to_excel(excel_writer, index=True,
+                           sheet_name=f'분류 {group[key]} 상위30개 단어들')
+        topDFdata.sort_values(['count']).plot(kind='barh')
+        plt.title(f'{group[key]}뉴스 최근 {days}일간 가장 많이 나온 단어 상위 30개')
+        i = i+1
+
+    excel_writer.save()
+    plt.show()
